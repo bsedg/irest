@@ -1,7 +1,6 @@
 // Package iREST is an integration testing package for RESTful
 // APIs. It simply makes HTTP requests and allows for checking of
 // responses, status codes, etc.
-
 package irest
 
 import (
