@@ -1,3 +1,6 @@
+// Package iREST is an integration testing package for RESTful
+// APIs. It simply makes HTTP requests and allows for checking of
+// responses, status codes, etc.
 package irest
 
 import (
@@ -9,22 +12,25 @@ import (
 	"time"
 )
 
+// Test struct contains sub-tests that can be isolated test cases as well
+// as the HTTP related objects and errors of current test and its sub-tests.
 type Test struct {
-	Name   string `json:"name"`
-	Error  error  `json:"err"`
-	Status int    `json:"status"`
-
+	Name     string `json:"name"`
+	Error    error  `json:"err"`
+	Status   int    `json:"status"`
 	Tests    []*Test
 	Errors   []error
 	Created  time.Time `json:"created"`
 	Duration int64     `json:"duration"`
 
+	// HTTP related fields for making requests and getting responses.
 	Client   *http.Client
 	Header   *http.Header
 	Cookie   *http.Cookie
 	Response *http.Response
 }
 
+// NewTest creates a new test with a given name.
 func NewTest(name string) *Test {
 	t := &Test{
 		Name:    name,
@@ -39,6 +45,8 @@ func NewTest(name string) *Test {
 	return t
 }
 
+// NewTest adds a Test as a sub-test to the current one. Sub-tests act as
+// individual test cases.
 func (t *Test) NewTest(name string) *Test {
 	testCase := &Test{
 		Name:   name,
@@ -52,11 +60,15 @@ func (t *Test) NewTest(name string) *Test {
 	return testCase
 }
 
+// AddHeader is a utility function to just wrap setting a header with a value
+// by name.
 func (t *Test) AddHeader(name, value string) *Test {
 	t.Header.Set(name, value)
 	return t
 }
 
+// Post sends a HTTP Post request with given URL from baseURL combined with
+// endpoint and then saves the result.
 func (t *Test) Post(baseURL, endpoint string, result interface{}) *Test {
 	t.Header.Set("Content-Type", "application/json")
 
@@ -96,6 +108,8 @@ func (t *Test) Post(baseURL, endpoint string, result interface{}) *Test {
 	return t
 }
 
+// MustStatus sets the Test.Error if the status code is not the expected
+// value. An HTTP request must have been made prior to this function call.
 func (t *Test) MustStatus(statusCode int) *Test {
 	if t.Error != nil {
 		return t
@@ -108,6 +122,8 @@ func (t *Test) MustStatus(statusCode int) *Test {
 	return t
 }
 
+// MustStringValue compares two string values and sets the Test.Error if not
+// equal.
 func (t *Test) MustStringValue(expected, actual string) *Test {
 	if t.Error != nil {
 		return t
@@ -120,6 +136,7 @@ func (t *Test) MustStringValue(expected, actual string) *Test {
 	return t
 }
 
+// MustIntValue compares two int values and sets the Test.Error if not equal.
 func (t *Test) MustIntValue(expected, actual int) *Test {
 	if t.Error != nil {
 		return t
@@ -136,6 +153,8 @@ func (t *Test) MustIntValue(expected, actual int) *Test {
 // not covered by the current functions currently.
 type MustFunction func() error
 
+// Must allows for passing in created functions matching the MustFunction
+// pattern with no parameters returning an error.
 func (t *Test) Must(fn MustFunction) *Test {
 	if t.Error != nil {
 		return t
@@ -148,6 +167,8 @@ func (t *Test) Must(fn MustFunction) *Test {
 	return t
 }
 
+// SaveCookie will store the cookie with the specified name if it exists in the
+// response. An HTTP request must have been made prior to this function call.
 func (t *Test) SaveCookie(name string, cookie *http.Cookie) *Test {
 	if t.Error != nil {
 		return t
