@@ -18,7 +18,7 @@ type SampleObject struct {
 func init() {
 	api = httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == http.MethodPost {
+			if r.Method == "POST" {
 				data, _ := json.Marshal(SampleObject{
 					Name:    "unit-test",
 					Value:   100,

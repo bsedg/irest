@@ -60,7 +60,7 @@ func (t *Test) Post(baseURL, endpoint string, v interface{}) *Test {
 		return t
 	}
 
-	req, err := http.NewRequest(http.MethodPost, addr.String(), nil)
+	req, err := http.NewRequest("POST", addr.String(), nil)
 	if err != nil {
 		t.Error = err
 		return t
