@@ -2,6 +2,7 @@ package irest
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,5 +81,20 @@ func TestIRestPostSaveCookie(t *testing.T) {
 
 	if cookie.Value != "unit-test-sample-value" {
 		t.Errorf("expected cookie value to be 'unit-test-sample-value', got '%s'", cookie)
+	}
+}
+
+func mustNil() error {
+	return fmt.Errorf("must function error")
+}
+
+func TestMustFunction(t *testing.T) {
+	test := NewTest("unit-test")
+
+	sample := SampleObject{}
+	test = test.Post(api.URL, "/tests", &sample).Must(mustNil)
+
+	if test.Error == nil {
+		t.Error("expecting error to be set with Must()")
 	}
 }

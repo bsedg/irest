@@ -132,6 +132,22 @@ func (t *Test) MustIntValue(expected, actual int) *Test {
 	return t
 }
 
+// MustFunction adds the ability to create functions that can check something
+// not covered by the current functions currently.
+type MustFunction func() error
+
+func (t *Test) Must(fn MustFunction) *Test {
+	if t.Error != nil {
+		return t
+	}
+
+	if err := fn(); err != nil {
+		t.Error = err
+	}
+
+	return t
+}
+
 func (t *Test) SaveCookie(name string, cookie *http.Cookie) *Test {
 	if t.Error != nil {
 		return t
