@@ -49,7 +49,7 @@ func TestIRestPost(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
-	test = test.Post(api.URL, "/tests", &sample)
+	test = test.Post(api.URL, "/tests", nil, &sample)
 	if sample.Name != "unit-test" {
 		t.Errorf("name response was %s, expected unit-test", sample.Name)
 	}
@@ -62,7 +62,7 @@ func TestIRestPostMustStatus(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
-	test = test.Post(api.URL, "/tests", &sample).MustStatus(http.StatusCreated)
+	test = test.Post(api.URL, "/tests", nil, &sample).MustStatus(http.StatusCreated)
 	if test.Error != nil {
 		t.Errorf("expected status to be 201 created, not %d: %s", test.Error.Error())
 	}
@@ -73,7 +73,7 @@ func TestIRestPostSaveCookie(t *testing.T) {
 
 	sample := SampleObject{}
 	cookie := &http.Cookie{}
-	test = test.Post(api.URL, "/tests", &sample).SaveCookie("test-cookie", cookie)
+	test = test.Post(api.URL, "/tests", nil, &sample).SaveCookie("test-cookie", cookie)
 
 	if test.Error != nil {
 		t.Error(test.Error)
@@ -92,7 +92,7 @@ func TestMustFunction(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
-	test = test.Post(api.URL, "/tests", &sample).Must(mustNil)
+	test = test.Post(api.URL, "/tests", nil, &sample).Must(mustNil)
 
 	if test.Error == nil {
 		t.Error("expecting error to be set with Must()")

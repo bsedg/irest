@@ -4,6 +4,7 @@
 package irest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -69,7 +70,7 @@ func (t *Test) AddHeader(name, value string) *Test {
 
 // Post sends a HTTP Post request with given URL from baseURL combined with
 // endpoint and then saves the result.
-func (t *Test) Post(baseURL, endpoint string, result interface{}) *Test {
+func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
 	t.Header.Set("Content-Type", "application/json")
 
 	addr, err := url.Parse(baseURL + endpoint)
@@ -78,7 +79,13 @@ func (t *Test) Post(baseURL, endpoint string, result interface{}) *Test {
 		return t
 	}
 
-	req, err := http.NewRequest("POST", addr.String(), nil)
+	b := new(bytes.Buffer)
+	if err := json.NewEncoder(b).Encode(data); err != nil {
+		t.Error = err
+		return t
+	}
+
+	req, err := http.NewRequest("POST", addr.String(), b)
 	if err != nil {
 		t.Error = err
 		return t
@@ -96,14 +103,17 @@ func (t *Test) Post(baseURL, endpoint string, result interface{}) *Test {
 	body := res.Body
 	defer body.Close()
 
-	data, err := ioutil.ReadAll(res.Body)
+	resultBody, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
 		t.Error = err
 		return t
 	}
 
-	json.Unmarshal(data, result)
+	if err := json.Unmarshal(resultBody, result); err != nil {
+		t.Error = err
+		return t
+	}
 
 	return t
 }
