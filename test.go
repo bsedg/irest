@@ -68,10 +68,11 @@ func (t *Test) AddHeader(name, value string) *Test {
 	return t
 }
 
-// Post sends a HTTP Post request with given URL from baseURL combined with
-// endpoint and then saves the result.
-func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
-	t.Header.Set("Content-Type", "application/json")
+// Get retrieves data from a specified endpoint.
+func (t *Test) Get(baseURL, endpoint string, result interface{}) *Test {
+	if t.Error != nil {
+		return t
+	}
 
 	addr, err := url.Parse(baseURL + endpoint)
 	if err != nil {
@@ -79,13 +80,7 @@ func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
 		return t
 	}
 
-	b := new(bytes.Buffer)
-	if err := json.NewEncoder(b).Encode(data); err != nil {
-		t.Error = err
-		return t
-	}
-
-	req, err := http.NewRequest("POST", addr.String(), b)
+	req, err := http.NewRequest("GET", addr.String(), nil)
 	if err != nil {
 		t.Error = err
 		return t
@@ -116,6 +111,66 @@ func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
 	}
 
 	return t
+}
+
+// Put sends a HTTP PUT request with given URL from baseURL combined with
+// endpoint and then saves the result.
+func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
+	if err := t.DoSaveRequest(baseURL+endpoint, "POST", data, result); err != nil {
+		t.Error = err
+	}
+
+	return t
+}
+
+// Post sends a HTTP POST request with given URL from baseURL combined with
+// endpoint and then saves the result.
+func (t *Test) Put(baseURL, endpoint string, data, result interface{}) *Test {
+	if err := t.DoSaveRequest(baseURL+endpoint, "PUT", data, result); err != nil {
+		t.Error = err
+	}
+
+	return t
+}
+
+// DoSaveRequest extracts similar functionality of both PUT and POST into
+// a single function.
+func (t *Test) DoSaveRequest(path, method string, data, result interface{}) error {
+	t.Header.Set("Content-Type", "application/json")
+
+	addr, err := url.Parse(path)
+	if err != nil {
+		return err
+	}
+
+	b := new(bytes.Buffer)
+	if err := json.NewEncoder(b).Encode(data); err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(method, addr.String(), b)
+	if err != nil {
+		return err
+	}
+
+	res, err := t.Client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	t.Response = res
+	t.Status = res.StatusCode
+
+	body := res.Body
+	defer body.Close()
+
+	resultBody, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(resultBody, result)
 }
 
 // MustStatus sets the Test.Error if the status code is not the expected
