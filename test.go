@@ -68,6 +68,51 @@ func (t *Test) AddHeader(name, value string) *Test {
 	return t
 }
 
+// Get retrieves data from a specified endpoint.
+func (t *Test) Get(baseURL, endpoint string, result interface{}) *Test {
+	if t.Error != nil {
+		return t
+	}
+
+	addr, err := url.Parse(baseURL + endpoint)
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	req, err := http.NewRequest("GET", addr.String(), nil)
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	res, err := t.Client.Do(req)
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	t.Response = res
+	t.Status = res.StatusCode
+
+	body := res.Body
+	defer body.Close()
+
+	resultBody, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	if err := json.Unmarshal(resultBody, result); err != nil {
+		t.Error = err
+		return t
+	}
+
+	return t
+}
+
 // Post sends a HTTP Post request with given URL from baseURL combined with
 // endpoint and then saves the result.
 func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {

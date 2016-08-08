@@ -17,14 +17,14 @@ type SampleObject struct {
 }
 
 func init() {
+	data, _ := json.Marshal(SampleObject{
+		Name:    "unit-test",
+		Value:   100,
+		Success: true,
+	})
 	api = httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == "POST" {
-				data, _ := json.Marshal(SampleObject{
-					Name:    "unit-test",
-					Value:   100,
-					Success: true,
-				})
 				cookie := &http.Cookie{
 					Name:  "test-cookie",
 					Value: "unit-test-sample-value",
@@ -33,11 +33,15 @@ func init() {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusCreated)
 				w.Write(data)
+			} else if r.Method == "GET" {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write(data)
 			}
 		}))
 }
 
-func TestIRestSetup(t *testing.T) {
+func TestSetup(t *testing.T) {
 	test := NewTest("unit-test")
 
 	if test.Name != "unit-test" {
@@ -45,7 +49,7 @@ func TestIRestSetup(t *testing.T) {
 	}
 }
 
-func TestIRestPost(t *testing.T) {
+func TestPost(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
@@ -58,7 +62,7 @@ func TestIRestPost(t *testing.T) {
 	}
 }
 
-func TestIRestPostMustStatus(t *testing.T) {
+func TestPostMustStatus(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
@@ -68,7 +72,7 @@ func TestIRestPostMustStatus(t *testing.T) {
 	}
 }
 
-func TestIRestPostSaveCookie(t *testing.T) {
+func TestPostSaveCookie(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
@@ -81,6 +85,16 @@ func TestIRestPostSaveCookie(t *testing.T) {
 
 	if cookie.Value != "unit-test-sample-value" {
 		t.Errorf("expected cookie value to be 'unit-test-sample-value', got '%s'", cookie)
+	}
+}
+
+func TestGet(t *testing.T) {
+	test := NewTest("unit-test")
+	sample := SampleObject{}
+	test = test.Get(api.URL, "/tests", &sample).MustStatus(http.StatusOK).MustStringValue(sample.Name, "unit-test")
+
+	if test.Error != nil {
+		t.Error(test.Error)
 	}
 }
 
