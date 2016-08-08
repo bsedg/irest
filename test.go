@@ -113,33 +113,49 @@ func (t *Test) Get(baseURL, endpoint string, result interface{}) *Test {
 	return t
 }
 
-// Post sends a HTTP Post request with given URL from baseURL combined with
+// Put sends a HTTP PUT request with given URL from baseURL combined with
 // endpoint and then saves the result.
 func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
+	if err := t.DoSaveRequest(baseURL+endpoint, "POST", data, result); err != nil {
+		t.Error = err
+	}
+
+	return t
+}
+
+// Post sends a HTTP POST request with given URL from baseURL combined with
+// endpoint and then saves the result.
+func (t *Test) Put(baseURL, endpoint string, data, result interface{}) *Test {
+	if err := t.DoSaveRequest(baseURL+endpoint, "PUT", data, result); err != nil {
+		t.Error = err
+	}
+
+	return t
+}
+
+// DoSaveRequest extracts similar functionality of both PUT and POST into
+// a single function.
+func (t *Test) DoSaveRequest(path, method string, data, result interface{}) error {
 	t.Header.Set("Content-Type", "application/json")
 
-	addr, err := url.Parse(baseURL + endpoint)
+	addr, err := url.Parse(path)
 	if err != nil {
-		t.Error = err
-		return t
+		return err
 	}
 
 	b := new(bytes.Buffer)
 	if err := json.NewEncoder(b).Encode(data); err != nil {
-		t.Error = err
-		return t
+		return err
 	}
 
-	req, err := http.NewRequest("POST", addr.String(), b)
+	req, err := http.NewRequest(method, addr.String(), b)
 	if err != nil {
-		t.Error = err
-		return t
+		return err
 	}
 
 	res, err := t.Client.Do(req)
 	if err != nil {
-		t.Error = err
-		return t
+		return err
 	}
 
 	t.Response = res
@@ -151,16 +167,10 @@ func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
 	resultBody, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
-		t.Error = err
-		return t
+		return err
 	}
 
-	if err := json.Unmarshal(resultBody, result); err != nil {
-		t.Error = err
-		return t
-	}
-
-	return t
+	return json.Unmarshal(resultBody, result)
 }
 
 // MustStatus sets the Test.Error if the status code is not the expected
