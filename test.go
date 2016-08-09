@@ -113,6 +113,51 @@ func (t *Test) Get(baseURL, endpoint string, result interface{}) *Test {
 	return t
 }
 
+// Delete deletes data from a specified endpoint.
+func (t *Test) Delete(baseURL, endpoint string, result interface{}) *Test {
+	if t.Error != nil {
+		return t
+	}
+
+	addr, err := url.Parse(baseURL + endpoint)
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	req, err := http.NewRequest("DELETE", addr.String(), nil)
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	res, err := t.Client.Do(req)
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	t.Response = res
+	t.Status = res.StatusCode
+
+	body := res.Body
+	defer body.Close()
+
+	resultBody, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	if err := json.Unmarshal(resultBody, result); err != nil {
+		t.Error = err
+		return t
+	}
+
+	return t
+}
+
 // Put sends a HTTP PUT request with given URL from baseURL combined with
 // endpoint and then saves the result.
 func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
