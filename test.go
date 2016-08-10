@@ -111,6 +111,8 @@ func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
 		return t
 	}
 
+	req.Header = *t.Header
+
 	res, err := t.Client.Do(req)
 	if err != nil {
 		t.Error = err
