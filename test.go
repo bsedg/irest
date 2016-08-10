@@ -69,153 +69,81 @@ func (t *Test) AddHeader(name, value string) *Test {
 }
 
 // Get retrieves data from a specified endpoint.
-func (t *Test) Get(baseURL, endpoint string, result interface{}) *Test {
-	if t.Error != nil {
-		return t
-	}
-
-	addr, err := url.Parse(baseURL + endpoint)
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
-	req, err := http.NewRequest("GET", addr.String(), nil)
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
-	res, err := t.Client.Do(req)
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
-	t.Response = res
-	t.Status = res.StatusCode
-
-	body := res.Body
-	defer body.Close()
-
-	resultBody, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
-	if err := json.Unmarshal(resultBody, result); err != nil {
-		t.Error = err
-		return t
-	}
-
-	return t
-}
-
-// Delete deletes data from a specified endpoint.
-func (t *Test) Delete(baseURL, endpoint string, result interface{}) *Test {
-	if t.Error != nil {
-		return t
-	}
-
-	addr, err := url.Parse(baseURL + endpoint)
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
-	req, err := http.NewRequest("DELETE", addr.String(), nil)
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
-	res, err := t.Client.Do(req)
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
-	t.Response = res
-	t.Status = res.StatusCode
-
-	body := res.Body
-	defer body.Close()
-
-	resultBody, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
-	if err := json.Unmarshal(resultBody, result); err != nil {
-		t.Error = err
-		return t
-	}
-
-	return t
+func (t *Test) Get(baseURL, endpoint string) *Test {
+	return t.do("GET", baseURL, endpoint, nil)
 }
 
 // Put sends a HTTP PUT request with given URL from baseURL combined with
-// endpoint and then saves the result.
-func (t *Test) Post(baseURL, endpoint string, data, result interface{}) *Test {
-	if err := t.DoSaveRequest(baseURL+endpoint, "POST", data, result); err != nil {
-		t.Error = err
-	}
-
-	return t
+// endpoint and sends the data as request body.
+func (t *Test) Post(baseURL, endpoint string, data interface{}) *Test {
+	return t.do("POST", baseURL, endpoint, data)
 }
 
 // Post sends a HTTP POST request with given URL from baseURL combined with
-// endpoint and then saves the result.
-func (t *Test) Put(baseURL, endpoint string, data, result interface{}) *Test {
-	if err := t.DoSaveRequest(baseURL+endpoint, "PUT", data, result); err != nil {
-		t.Error = err
-	}
-
-	return t
+// endpoint and sends the data as request body.
+func (t *Test) Put(baseURL, endpoint string, data interface{}) *Test {
+	return t.do("PUT", baseURL, endpoint, data)
 }
 
-// DoSaveRequest extracts similar functionality of both PUT and POST into
-// a single function.
-func (t *Test) DoSaveRequest(path, method string, data, result interface{}) error {
-	t.Header.Set("Content-Type", "application/json")
+// Delete deletes data from a specified endpoint.
+func (t *Test) Delete(baseURL, endpoint string) *Test {
+	return t.do("DELETE", baseURL, endpoint, nil)
+}
 
-	addr, err := url.Parse(path)
+func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
+	addr, err := url.Parse(baseURL + endpoint)
 	if err != nil {
-		return err
+		t.Error = err
+		return t
 	}
 
 	b := new(bytes.Buffer)
-	if err := json.NewEncoder(b).Encode(data); err != nil {
-		return err
+	if data != nil {
+		if err := json.NewEncoder(b).Encode(data); err != nil {
+			t.Error = err
+			return t
+		}
 	}
 
 	req, err := http.NewRequest(method, addr.String(), b)
 	if err != nil {
-		return err
+		t.Error = err
+		return t
 	}
 
 	res, err := t.Client.Do(req)
 	if err != nil {
-		return err
+		t.Error = err
+		return t
 	}
 
 	t.Response = res
 	t.Status = res.StatusCode
 
-	body := res.Body
-	defer body.Close()
+	return t
+}
 
-	resultBody, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		return err
+func (t *Test) ParseResponseBody(result interface{}) *Test {
+	if t.Response == nil || t.Response.Body == nil {
+		t.Error = fmt.Errorf("need response body to parse")
+		return t
 	}
 
-	return json.Unmarshal(resultBody, result)
+	defer t.Response.Body.Close()
+
+	resultBody, err := ioutil.ReadAll(t.Response.Body)
+
+	if err != nil {
+		t.Error = err
+		return t
+	}
+
+	if err := json.Unmarshal(resultBody, result); err != nil {
+		t.Error = err
+		return t
+	}
+
+	return t
 }
 
 // MustStatus sets the Test.Error if the status code is not the expected

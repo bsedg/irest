@@ -62,7 +62,7 @@ func TestPost(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
-	test = test.Post(api.URL, "/tests", nil, &sample)
+	test = test.Post(api.URL, "/tests", nil).ParseResponseBody(&sample)
 	if sample.Name != "unit-test" {
 		t.Errorf("name response was %s, expected unit-test", sample.Name)
 	}
@@ -75,7 +75,10 @@ func TestPostMustStatus(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
-	test = test.Post(api.URL, "/tests", nil, &sample).MustStatus(http.StatusCreated)
+	test = test.Post(api.URL, "/tests", nil).
+		MustStatus(http.StatusCreated).
+		ParseResponseBody(&sample)
+
 	if test.Error != nil {
 		t.Errorf("expected status to be 201 created, not %d: %s", test.Error.Error())
 	}
@@ -86,7 +89,9 @@ func TestPostSaveCookie(t *testing.T) {
 
 	sample := SampleObject{}
 	cookie := &http.Cookie{}
-	test = test.Post(api.URL, "/tests", nil, &sample).SaveCookie("test-cookie", cookie)
+	test = test.Post(api.URL, "/tests", nil).
+		SaveCookie("test-cookie", cookie).
+		ParseResponseBody(&sample)
 
 	if test.Error != nil {
 		t.Error(test.Error)
@@ -100,7 +105,10 @@ func TestPostSaveCookie(t *testing.T) {
 func TestGet(t *testing.T) {
 	test := NewTest("unit-test")
 	sample := SampleObject{}
-	test = test.Get(api.URL, "/tests", &sample).MustStatus(http.StatusOK).MustStringValue(sample.Name, "unit-test")
+	test = test.Get(api.URL, "/tests").
+		MustStatus(http.StatusOK).
+		ParseResponseBody(&sample).
+		MustStringValue(sample.Name, "unit-test")
 
 	if test.Error != nil {
 		t.Error(test.Error)
@@ -115,7 +123,9 @@ func TestMustFunction(t *testing.T) {
 	test := NewTest("unit-test")
 
 	sample := SampleObject{}
-	test = test.Post(api.URL, "/tests", nil, &sample).Must(mustNil)
+	test = test.Post(api.URL, "/tests", nil).
+		Must(mustNil).
+		ParseResponseBody(&sample)
 
 	if test.Error == nil {
 		t.Error("expecting error to be set with Must()")
@@ -127,9 +137,10 @@ func testComplexSingleTest(t *testing.T) {
 
 	sample := SampleObject{}
 	cookie := &http.Cookie{}
-	test = test.Post(api.URL, "/tests", nil, &sample).
+	test = test.Post(api.URL, "/tests", nil).
 		SaveCookie("test-cookie", cookie).
 		MustStatus(201).
+		ParseResponseBody(&sample).
 		MustStringValue(sample.Name, "unit-test").
 		MustIntValue(sample.Value, 100).
 		Must(func() error {
@@ -151,9 +162,10 @@ func testInnerTests(t *testing.T) {
 	getSample := SampleObject{}
 	cookie := &http.Cookie{}
 	createTest := test.NewTest("create")
-	createTest = createTest.Post(api.URL, "/tests", nil, &postSample).
+	createTest = createTest.Post(api.URL, "/tests", nil).
 		SaveCookie("test-cookie", cookie).
 		MustStatus(201).
+		ParseResponseBody(&postSample).
 		MustStringValue(postSample.Name, "unit-test").
 		MustIntValue(postSample.Value, 100).
 		Must(func() error {
@@ -164,14 +176,16 @@ func testInnerTests(t *testing.T) {
 		})
 
 	getTest := test.NewTest("get")
-	getTest = getTest.Get(api.URL, "/tests", &getSample).
+	getTest = getTest.Get(api.URL, "/tests").
 		MustStatus(200).
+		ParseResponseBody(&getSample).
 		MustStringValue(getSample.Name, "unit-test").
 		MustIntValue(getSample.Value, 100)
 
 	failedGetTest := test.NewTest("failed get")
-	failedGetTest = failedGetTest.Get(api.URL, "/tests", &getSample).
+	failedGetTest = failedGetTest.Get(api.URL, "/tests").
 		MustStatus(404).
+		ParseResponseBody(&getSample).
 		MustStringValue(getSample.Name, "unit-test").
 		MustIntValue(getSample.Value, 100)
 
