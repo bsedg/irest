@@ -58,6 +58,10 @@ func (t *Test) NewTest(name string) *Test {
 
 	t.Tests = append(t.Tests, testCase)
 
+	// For convenience, bring down header values that were set on the
+	// parent test.
+	testCase.Header = t.Header
+
 	return testCase
 }
 
