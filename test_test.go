@@ -71,6 +71,17 @@ func TestPost(t *testing.T) {
 	}
 }
 
+func TestAddDefaultHeader(t *testing.T) {
+	test := NewTest("unit-test").
+		AddHeader("Content-Type", "application/json")
+
+	subTest := test.NewTest("sub-test")
+
+	if subTest.Header.Get("Content-Type") == "" {
+		t.Error("expected Content-Type to be set")
+	}
+}
+
 func TestPostMustStatus(t *testing.T) {
 	test := NewTest("unit-test")
 
