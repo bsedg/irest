@@ -1,4 +1,4 @@
-// Package iREST is an integration testing package for RESTful
+// Package irest is an integration testing package for RESTful
 // APIs. It simply makes HTTP requests and allows for checking of
 // responses, status codes, etc.
 package irest
@@ -17,12 +17,14 @@ import (
 // as the HTTP related objects and errors of current test and its sub-tests.
 type Test struct {
 	Name     string `json:"name"`
+	Endpoint string `json:"endpoint"`
 	Error    error  `json:"err"`
 	Status   int    `json:"status"`
 	Tests    []*Test
 	Errors   []error
 	Created  time.Time `json:"created"`
 	Duration int64     `json:"duration"`
+	Depth    int
 
 	// HTTP related fields for making requests and getting responses.
 	Client   *http.Client
@@ -41,6 +43,7 @@ func NewTest(name string) *Test {
 		Created: time.Now(),
 		Client:  &http.Client{},
 		Header:  &http.Header{},
+		Depth:   0,
 	}
 
 	return t
@@ -54,6 +57,7 @@ func (t *Test) NewTest(name string) *Test {
 		Tests:  []*Test{},
 		Client: t.Client,
 		Header: &http.Header{},
+		Depth:  t.Depth + 1,
 	}
 
 	t.Tests = append(t.Tests, testCase)
@@ -83,13 +87,13 @@ func (t *Test) Get(baseURL, endpoint string) *Test {
 	return t.do("GET", baseURL, endpoint, nil)
 }
 
-// Put sends a HTTP PUT request with given URL from baseURL combined with
+// Post sends a HTTP POST request with given URL from baseURL combined with
 // endpoint and sends the data as request body.
 func (t *Test) Post(baseURL, endpoint string, data interface{}) *Test {
 	return t.do("POST", baseURL, endpoint, data)
 }
 
-// Post sends a HTTP POST request with given URL from baseURL combined with
+// Post sends a HTTP PUT request with given URL from baseURL combined with
 // endpoint and sends the data as request body.
 func (t *Test) Put(baseURL, endpoint string, data interface{}) *Test {
 	return t.do("PUT", baseURL, endpoint, data)
@@ -142,6 +146,8 @@ func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
 	return t
 }
 
+// ParseResponseBody parses the HTTP response body from json
+// to a provided interface.
 func (t *Test) ParseResponseBody(result interface{}) *Test {
 	if t.Response == nil || t.Response.Body == nil {
 		t.Error = fmt.Errorf("need response body to parse")
