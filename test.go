@@ -29,7 +29,7 @@ type Test struct {
 	// HTTP related fields for making requests and getting responses.
 	Client   *http.Client
 	Header   *http.Header
-	Cookie   *http.Cookie
+	Cookies  []*http.Cookie
 	Response *http.Response
 }
 
@@ -62,6 +62,10 @@ func (t *Test) NewTest(name string) *Test {
 
 	t.Tests = append(t.Tests, testCase)
 
+	// For convenience, bring down header values that were set on the
+	// parent test.
+	testCase.Header = t.Header
+
 	return testCase
 }
 
@@ -69,6 +73,12 @@ func (t *Test) NewTest(name string) *Test {
 // by name.
 func (t *Test) AddHeader(name, value string) *Test {
 	t.Header.Set(name, value)
+	return t
+}
+
+// AddCookie adds to the slice of cookies to be included in the request.
+func (t *Test) AddCookie(c *http.Cookie) *Test {
+	t.Cookies = append(t.Cookies, c)
 	return t
 }
 
@@ -115,11 +125,20 @@ func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
 		return t
 	}
 
+	req.Header = *t.Header
+
+	for _, c := range t.Cookies {
+		req.AddCookie(c)
+	}
+
+	startTime := time.Now()
 	res, err := t.Client.Do(req)
 	if err != nil {
 		t.Error = err
 		return t
 	}
+	reqDuration := time.Since(startTime)
+	t.Duration = reqDuration.Nanoseconds() / int64(time.Millisecond)
 
 	t.Response = res
 	t.Status = res.StatusCode
