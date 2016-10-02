@@ -33,3 +33,23 @@ func main() {
 }
 
 ```
+
+## Development
+
+Add any needed tests, then run the tests to make sure nothing breaks:
+
+`go test ./...`
+
+### Running the example
+
+Build the binary:
+
+`go build cmd/example_report/example_report.go`
+
+Run the example:
+
+`./example_report`
+
+### Issues, bugs, feature requests
+
+Create a new issue for any bug or feature request. If a bug is found or unexpected behavior, create an issue that clearly outlines what was expected and what actually happened. Design proposals of feature requests are welcomed as well. 
