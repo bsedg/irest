@@ -16,9 +16,15 @@ import (
 // Test struct contains sub-tests that can be isolated test cases as well
 // as the HTTP related objects and errors of current test and its sub-tests.
 type Test struct {
-	Name     string `json:"name"`
-	Error    error  `json:"err"`
-	Status   int    `json:"status"`
+	Name  string `json:"name"`
+	Error error  `json:"err"`
+
+	// Depth is useful for reporting.
+	Depth int `json:"depth"`
+
+	Endpoint string `json:"endpoint"`
+
+	Status   int `json:"status"`
 	Tests    []*Test
 	Errors   []error
 	Created  time.Time `json:"created"`
@@ -36,6 +42,7 @@ func NewTest(name string) *Test {
 	t := &Test{
 		Name:    name,
 		Error:   nil,
+		Depth:   0,
 		Tests:   []*Test{},
 		Errors:  []error{},
 		Created: time.Now(),
@@ -51,6 +58,7 @@ func NewTest(name string) *Test {
 func (t *Test) NewTest(name string) *Test {
 	testCase := &Test{
 		Name:   name,
+		Depth:  t.Depth + 1,
 		Tests:  []*Test{},
 		Client: t.Client,
 		Header: &http.Header{},
@@ -106,6 +114,8 @@ func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
 		t.Error = err
 		return t
 	}
+
+	t.Endpoint = endpoint
 
 	b := new(bytes.Buffer)
 	if data != nil {
