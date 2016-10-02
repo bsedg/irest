@@ -91,7 +91,7 @@ func TestPostMustStatus(t *testing.T) {
 		ParseResponseBody(&sample)
 
 	if test.Error != nil {
-		t.Errorf("expected status to be 201 created, not %d: %s", test.Error.Error())
+		t.Errorf("expected status to be 201 created: %s", test.Error.Error())
 	}
 }
 
