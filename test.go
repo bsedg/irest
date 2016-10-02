@@ -20,6 +20,7 @@ type Test struct {
 	Endpoint string `json:"endpoint"`
 	Error    error  `json:"err"`
 	Status   int    `json:"status"`
+
 	Tests    []*Test
 	Errors   []error
 	Created  time.Time `json:"created"`
@@ -38,12 +39,12 @@ func NewTest(name string) *Test {
 	t := &Test{
 		Name:    name,
 		Error:   nil,
+		Depth:   0,
 		Tests:   []*Test{},
 		Errors:  []error{},
 		Created: time.Now(),
 		Client:  &http.Client{},
 		Header:  &http.Header{},
-		Depth:   0,
 	}
 
 	return t
@@ -54,10 +55,10 @@ func NewTest(name string) *Test {
 func (t *Test) NewTest(name string) *Test {
 	testCase := &Test{
 		Name:   name,
+		Depth:  t.Depth + 1,
 		Tests:  []*Test{},
 		Client: t.Client,
 		Header: &http.Header{},
-		Depth:  t.Depth + 1,
 	}
 
 	t.Tests = append(t.Tests, testCase)
@@ -93,7 +94,7 @@ func (t *Test) Post(baseURL, endpoint string, data interface{}) *Test {
 	return t.do("POST", baseURL, endpoint, data)
 }
 
-// Post sends a HTTP PUT request with given URL from baseURL combined with
+// Put sends a HTTP PUT request with given URL from baseURL combined with
 // endpoint and sends the data as request body.
 func (t *Test) Put(baseURL, endpoint string, data interface{}) *Test {
 	return t.do("PUT", baseURL, endpoint, data)
@@ -110,6 +111,8 @@ func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
 		t.Error = err
 		return t
 	}
+
+	t.Endpoint = endpoint
 
 	b := new(bytes.Buffer)
 	if data != nil {
