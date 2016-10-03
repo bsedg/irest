@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+// Report provides test to output results for as well as various fields for
+// display purposes.
 type Report struct {
 	InfoLabel     string
 	PassTestLabel string
@@ -13,7 +15,7 @@ type Report struct {
 	Test *Test
 }
 
-// NewDefaultReport sets outputs to use ANSI color codes
+// NewColoredCommandLineReport sets outputs to use ANSI color codes
 // and unicode check and x.
 func NewColoredCommandLineReport(t *Test) *Report {
 	return &Report{
