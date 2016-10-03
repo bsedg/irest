@@ -50,6 +50,8 @@ Run the example:
 
 `./example_report`
 
+![Image Example Report](./docs/example_report.png)
+
 ### Issues, bugs, feature requests
 
-Create a new issue for any bug or feature request. If a bug is found or unexpected behavior, create an issue that clearly outlines what was expected and what actually happened. Design proposals of feature requests are welcomed as well. 
+Create a new issue for any bug or feature request. If a bug is found or unexpected behavior, create an issue that clearly outlines what was expected and what actually happened. Design proposals of feature requests are welcomed as well.
