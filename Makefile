@@ -7,10 +7,6 @@ build:
 	@echo "+ $@"
 	@go build .
 
-build_example:
-	@echo "+ $@"
-	@go build cmd/example_report/example_report.go
-
 clean:
 	@echo "+ $@"
 	@rm -f example_report $(COVERPROFILE)
@@ -19,6 +15,10 @@ cover:
 	@echo "+ $@"
 	@go test -coverprofile=$(COVERPROFILE) .
 	@go tool cover -html=$(COVERPROFILE)
+
+example:
+	@echo "+ $@"
+	@go build cmd/example_report/example_report.go
 
 fmt:
 	@echo "+ $@"
