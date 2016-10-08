@@ -81,5 +81,5 @@ func (r *Report) printResult(t *Test) {
 		msg += fmt.Sprintf(" (%s) for %s", t.Error, t.Endpoint)
 	}
 
-	fmt.Printf("%s %s %s %s\n", result, timing, indent, msg)
+	fmt.Printf("%s %s [%s] [%s] [%d] %s %s\n", result, timing, t.Method, t.Endpoint, t.Status, indent, msg)
 }
