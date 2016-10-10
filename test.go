@@ -19,6 +19,7 @@ type Test struct {
 	Name     string `json:"name"`
 	Endpoint string `json:"endpoint"`
 	Error    error  `json:"err"`
+	Method   string `json:"method"`
 	Status   int    `json:"status"`
 
 	Tests    []*Test
@@ -85,24 +86,24 @@ func (t *Test) AddCookie(c *http.Cookie) *Test {
 
 // Get retrieves data from a specified endpoint.
 func (t *Test) Get(baseURL, endpoint string) *Test {
-	return t.do("GET", baseURL, endpoint, nil)
+	return t.do(http.MethodGet, baseURL, endpoint, nil)
 }
 
 // Post sends a HTTP POST request with given URL from baseURL combined with
 // endpoint and sends the data as request body.
 func (t *Test) Post(baseURL, endpoint string, data interface{}) *Test {
-	return t.do("POST", baseURL, endpoint, data)
+	return t.do(http.MethodPost, baseURL, endpoint, data)
 }
 
 // Put sends a HTTP PUT request with given URL from baseURL combined with
 // endpoint and sends the data as request body.
 func (t *Test) Put(baseURL, endpoint string, data interface{}) *Test {
-	return t.do("PUT", baseURL, endpoint, data)
+	return t.do(http.MethodPut, baseURL, endpoint, data)
 }
 
 // Delete deletes data from a specified endpoint.
 func (t *Test) Delete(baseURL, endpoint string) *Test {
-	return t.do("DELETE", baseURL, endpoint, nil)
+	return t.do(http.MethodDelete, baseURL, endpoint, nil)
 }
 
 func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
@@ -144,6 +145,7 @@ func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
 	t.Duration = reqDuration.Nanoseconds() / int64(time.Millisecond)
 
 	t.Response = res
+	t.Method = method
 	t.Status = res.StatusCode
 
 	return t
