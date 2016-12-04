@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -107,12 +106,6 @@ func (t *Test) Delete(baseURL, endpoint string) *Test {
 }
 
 func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
-	addr, err := url.Parse(baseURL + endpoint)
-	if err != nil {
-		t.Error = err
-		return t
-	}
-
 	t.Endpoint = endpoint
 
 	b := new(bytes.Buffer)
@@ -123,7 +116,7 @@ func (t *Test) do(method, baseURL, endpoint string, data interface{}) *Test {
 		}
 	}
 
-	req, err := http.NewRequest(method, addr.String(), b)
+	req, err := http.NewRequest(method, baseURL+endpoint, b)
 	if err != nil {
 		t.Error = err
 		return t

@@ -21,7 +21,7 @@ type SampleObject struct {
 func init() {
 	api = httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == http.MethodPost {
+			if r.Method == http.MethodPost || r.Method == http.MethodPut {
 				data, _ := json.Marshal(SampleObject{
 					Name:    "unit-test",
 					Value:   100,
@@ -50,6 +50,8 @@ func init() {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				w.Write(data)
+			} else if r.Method == http.MethodDelete {
+				w.WriteHeader(http.StatusNoContent)
 			}
 		}))
 }
@@ -75,6 +77,66 @@ func TestPost(t *testing.T) {
 	}
 }
 
+func TestPut(t *testing.T) {
+	test := NewTest("unit-test")
+
+	sample := SampleObject{}
+	test = test.Put(api.URL, "/tests", nil).ParseResponseBody(&sample)
+	if sample.Name != "unit-test" {
+		t.Errorf("name response was %s, expected unit-test", sample.Name)
+	}
+	if !sample.Success {
+		t.Error("expected response success to be true")
+	}
+}
+
+func TestDelete(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test = test.Delete(api.URL, "/tests")
+	if test.Status != http.StatusNoContent {
+		t.Errorf("expected status 204 No Content, instead was %d", test.Status)
+	}
+}
+
+func TestMalformedUrl(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test = test.Get(api.URL, "bad-url%@%(*%)///\\####")
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestBadRequestBody(t *testing.T) {
+	test := NewTest("unit-test")
+
+	// pass a clearly bogus request body to force a json parse error
+	test = test.Post(api.URL, "/tests", make(chan int))
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestRequestFailure(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test = test.Get("", "")
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestParseResponseBodyEmptyResponse(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test = test.ParseResponseBody(nil)
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
 func TestAddDefaultHeader(t *testing.T) {
 	test := NewTest("unit-test").
 		AddHeader("Content-Type", "application/json")
@@ -83,6 +145,17 @@ func TestAddDefaultHeader(t *testing.T) {
 
 	if subTest.Header.Get("Content-Type") == "" {
 		t.Error("expected Content-Type to be set")
+	}
+}
+
+func TestAddCookie(t *testing.T) {
+	cookie := &http.Cookie{Name: "test-cookie", Value: "test-value"}
+	test := NewTest("unit-test").
+		AddCookie(cookie)
+
+	test = test.Get(api.URL, "/tests")
+	if test.Cookies[0] != cookie {
+		t.Error("expected cookie to be set")
 	}
 }
 
@@ -132,6 +205,124 @@ func TestGet(t *testing.T) {
 
 func mustNil() error {
 	return fmt.Errorf("must function error")
+}
+
+func TestMustStatusError(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test.Error = fmt.Errorf("testing error")
+	test = test.MustStatus(500)
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestMustStatusMismatch(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test.Status = 418
+	test = test.MustStatus(451)
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestMustStringValueError(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test.Error = fmt.Errorf("testing error")
+	test = test.MustStringValue("test", "test")
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestMustStringValueMismatch(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test = test.MustStringValue("foo", "bar")
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestMustIntValueError(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test.Error = fmt.Errorf("testing error")
+	test = test.MustIntValue(42, 42)
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestMustIntValueMismatch(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test = test.MustIntValue(42, 43)
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestMustError(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test.Error = fmt.Errorf("testing error")
+	test = test.Must(mustNil)
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestSaveCookieError(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test.Error = fmt.Errorf("testing error")
+	test = test.SaveCookie("test-cookie", &http.Cookie{})
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+}
+
+func TestSaveCookieNoResponse(t *testing.T) {
+	test := NewTest("unit-test")
+
+	test = test.SaveCookie("test-cookie", &http.Cookie{})
+
+	if test.Error == nil {
+		t.Errorf("expected an error, but did not get one")
+	}
+
+	msg := "http response not set, must have request before saving result"
+	if test.Error.Error() != msg {
+		t.Errorf("expected '%s', got '%s' instead", msg, test.Error.Error())
+	}
+}
+
+func TestSaveCookieDoesNotExist(t *testing.T) {
+	test := NewTest("unit-test")
+
+	cookie := &http.Cookie{}
+	test = test.Post(api.URL, "/tests", nil).
+		SaveCookie("nonexistent-cookie", cookie)
+
+	if test.Error == nil {
+		t.Error("expected an error, but did not get one")
+	}
+
+	msg := "cookie name 'nonexistent-cookie' not found"
+	if test.Error.Error() != msg {
+		t.Errorf("expected '%s', but got '%s' instead", msg, test.Error.Error())
+	}
 }
 
 func TestMustFunction(t *testing.T) {
