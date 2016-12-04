@@ -259,3 +259,40 @@ func (t *Test) SaveCookie(name string, cookie *http.Cookie) *Test {
 
 	return t
 }
+
+// WaitForPing waits a given number of seconds before getting a successful
+// HTTP response.
+func (t *Test) WaitForPing(seconds int64, url string) *Test {
+	pingResult := make(chan bool, 1)
+	go func() {
+		resultCode := pingURL(url)
+		if resultCode == http.StatusOK {
+			pingResult <- true
+		}
+		time.Sleep(time.Millisecond * 100)
+	}()
+	select {
+	case <-pingResult:
+		t.Status = http.StatusOK
+		return t
+	case <-time.After(time.Second * time.Duration(seconds)):
+		t.Status = http.StatusRequestTimeout
+		t.Error = fmt.Errorf("timeout of %d seconds getting ping from %s", seconds, url)
+		return t
+	}
+}
+
+func pingURL(url string) int {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return 0
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return 0
+	}
+
+	return res.StatusCode
+}

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 var api *httptest.Server
@@ -20,7 +21,7 @@ type SampleObject struct {
 func init() {
 	api = httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == "POST" {
+			if r.Method == http.MethodPost {
 				data, _ := json.Marshal(SampleObject{
 					Name:    "unit-test",
 					Value:   100,
@@ -36,7 +37,10 @@ func init() {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusCreated)
 				w.Write(data)
-			} else if r.Method == "GET" {
+			} else if r.Method == http.MethodGet {
+				if strings.Contains(r.URL.String(), "wait") {
+					time.Sleep(time.Second * 2)
+				}
 				data, _ := json.Marshal(SampleObject{
 					Name:    "unit-test",
 					Value:   100,
@@ -214,5 +218,24 @@ func testInnerTests(t *testing.T) {
 
 	if test.Tests[2].Error == nil || !strings.Contains(test.Tests[2].Error.Error(), "status") {
 		t.Errorf("expected must status to fail")
+	}
+}
+
+func TestWaitForPing(t *testing.T) {
+	test := NewTest("unit-test").
+		WaitForPing(1, api.URL+"/tests")
+
+	if test.Error != nil {
+		t.Errorf("expected no timout error on ping")
+	}
+}
+
+func TestWaitForPingTimeout(t *testing.T) {
+	url := api.URL + "/wait"
+	test := NewTest("unit-test").
+		WaitForPing(1, url)
+
+	if test.Error == nil {
+		t.Errorf("expected timout error on ping")
 	}
 }
