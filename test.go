@@ -27,6 +27,10 @@ type Test struct {
 	Duration int64     `json:"duration"`
 	Depth    int
 
+	// EndpointTests are an abstracted slice of tests for specific endpoints.
+	EndpointTests []*EndpointTest
+	savedValues map[string]string
+
 	// HTTP related fields for making requests and getting responses.
 	Client   *http.Client
 	Header   *http.Header
@@ -59,6 +63,7 @@ func (t *Test) NewTest(name string) *Test {
 		Tests:  []*Test{},
 		Client: t.Client,
 		Header: &http.Header{},
+		savedValues: make(map[string]string),
 	}
 
 	t.Tests = append(t.Tests, testCase)
@@ -68,6 +73,22 @@ func (t *Test) NewTest(name string) *Test {
 	testCase.Header = t.Header
 
 	return testCase
+}
+
+// NewEndpointsTest tests endpoints in order with more abstracted functionality.
+func (t *Test) NewEndpointsTest(name string, tests ...*EndpointTest) *Test {
+	testCase := &EndpointTest{
+		Parent: t,
+		Name:   name,
+		Client: t.Client,
+		Header: &http.Header{},
+	}
+
+	// For convenience, bring down header values that were set on the
+	// parent test.
+	testCase.Header = t.Header
+
+	return t
 }
 
 // AddHeader is a utility function to just wrap setting a header with a value

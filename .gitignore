@@ -22,3 +22,9 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+*.out
+
+# binaries
+example_report
+example_setup
