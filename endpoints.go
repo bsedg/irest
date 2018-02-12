@@ -153,6 +153,7 @@ func (e *EndpointTest) Do() *EndpointTest {
 	}
 
 	startTime := time.Now()
+	fmt.Printf("%+v\n", req)
 	res, err := e.Client.Do(req)
 	if err != nil {
 		e.Error = err
