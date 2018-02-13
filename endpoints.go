@@ -79,9 +79,15 @@ func (e *Endpoint) Use(baseURL string, payload interface{}, v ...interface{}) *E
 	return et
 }
 
-// UseHeader uses a previously saved header value by name as a header with the
+// UseHeader uses a name and value for header to be set.
+func (e *EndpointTest) UseHeader(name, value string) *EndpointTest {
+	e.Header.Set(name, value)
+	return e
+}
+
+// UseSavedHeader uses a previously saved header value by name as a header with the
 // provided name.
-func (e *EndpointTest) UseHeader(savedName, name string) *EndpointTest {
+func (e *EndpointTest) UseSavedHeader(savedName, name string) *EndpointTest {
 	savedValue, ok := e.Parent.savedValues[savedName]
 	if !ok {
 		e.Error = fmt.Errorf("header not found saved as %s", savedName)
